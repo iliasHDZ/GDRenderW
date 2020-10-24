@@ -136,6 +136,11 @@ function switchLevel() {
         setInfo("Not a level id. (Remove spaces).");
 }
 
+const urlParams = new URLSearchParams(window.location.search);
+const myParam = urlParams.get('level');
+
+switchLevel(myParam);
+
 var canvas = document.getElementById("canvas");
 var gl     = canvas.getContext("webgl");
 
