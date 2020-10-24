@@ -1,0 +1,21 @@
+<html>
+    <head>
+        <title id="title">GDRenderW</title>
+    </head>
+    <body>
+        <h3 id="level-name">No Level Chosen</h3>
+        <canvas id="canvas" width=1280 height=720 style="border: 1px solid black; background-color: lightblue;"></canvas>
+        <script type="text/javascript" src="GDRenderW/pako.js"></script>
+        <script type="text/javascript" src="GDRenderW/gl-matrix-min.js"></script>
+        <script type="text/javascript" src="GDRenderW/main.js"></script>
+        <script type="text/javascript" src="script.js"></script>
+        <br>
+        <button onclick="zoomin()">+</button>
+        <button onclick="zoomout()">-</button>
+        <button onclick="playaudio()">PLAY SONG</button><br>
+        <p id="counter">xxx fps</p><br>
+        ID of a level: <input type="text" id="id-input"><button onclick="switchLevel()">LOAD</button>
+        <p id="info"></p>
+        <p>By IliasHDZ - MIT License - <a href="">GitHub</a></p>
+    </body>
+</html>
