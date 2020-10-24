@@ -139,10 +139,12 @@ function switchLevel() {
 window.onload = function() {
     const urlParams = new URLSearchParams(window.location.search);
     const myParam = urlParams.get('level');
-}
 
-document.getElementById("id-input").value = myParam;
-switchLevel();
+    if (myParam) {
+        document.getElementById("id-input").value = myParam;
+        switchLevel();
+    }
+}
 
 var canvas = document.getElementById("canvas");
 var gl     = canvas.getContext("webgl");
