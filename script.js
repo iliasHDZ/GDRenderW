@@ -136,8 +136,10 @@ function switchLevel() {
         setInfo("Not a level id. (Remove spaces).");
 }
 
-const urlParams = new URLSearchParams(window.location.search);
-const myParam = urlParams.get('level');
+window.onload = function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const myParam = urlParams.get('level');
+}
 
 document.getElementById("id-input").value = myParam;
 switchLevel();
