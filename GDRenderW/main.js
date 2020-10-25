@@ -498,7 +498,7 @@ var gdr = {
         let r = new XMLHttpRequest();
         if (!parseInt(id))
             return false;
-        r.open("GET", "http://localhost:8567/getSongID/" + id);
+        r.open("GET", "http://87.64.71.236:8567/getSongID/" + id);
         r.onreadystatechange = () => {
             if (r.readyState != 3)
                 return;
@@ -506,7 +506,7 @@ var gdr = {
                 f(false);
                 return;
             }
-            f("http://localhost:8567" + r.response)
+            f("http://87.64.71.236:8567" + r.response)
         }
         r.onerr = () => {
             f(false);
