@@ -183,8 +183,7 @@ var util = {
                                             parsd[defo.n] = parseInt(proplist[j]);
                                         }
                                     }
-                                } else
-                                    console.log("Unknown ColorProp: " + j)
+                                }
                             }
                         }
                         colors[proplist[6]] = parsd;
@@ -204,7 +203,6 @@ var util = {
                             timestamp = parseFloat(value.substring(lastSquig, i));
                         } else {
                             colval = parseFloat(value.substring(lastSquig, i));
-                            console.log(value.substring(lastSquig, i));
                             guides.push({time: timestamp, col: colval});
                         }
                         lastSquig = i + 1;
@@ -279,10 +277,12 @@ var util = {
     },
     xToCOL: function(level, x, col) {
         var resCOL = null;
-        for (var colo of level.listCOLs[col]) {
-            if (colo.x >= x)
-                break;
-            resCOL = colo;
+        if (level.listCOLs[col] != undefined) {
+            for (var colo of level.listCOLs[col]) {
+                if (colo.x >= x)
+                    break;
+                resCOL = colo;
+            }
         }
         if (resCOL != null) {
             var delta = this.xToSec(level, x) - this.xToSec(level, resCOL.x);
@@ -291,7 +291,7 @@ var util = {
             else
                 return {r: resCOL.red, g: resCOL.green, b: resCOL.blue};
         } else
-            return {r: level.keys.colors[col].r, g: level.keys.colors[col].g, b: level.keys.colors[col].b};
+            return level.keys.colors[col] != undefined ? {r: level.keys.colors[col].red, g: level.keys.colors[col].green, b: level.keys.colors[col].blue} : {r: 255, g: 255, b: 255};
     },
     blendComp: function(c1, c2, blend) {
         return c1 * (1-blend) + c2 * blend;
@@ -369,8 +369,10 @@ precision mediump float;
 varying vec2 o_texcoord;
 uniform sampler2D a_sampler;
 
+uniform vec4 a_tint;
+
 void main() {
-    gl_FragColor = texture2D(a_sampler, o_texcoord);//vec4(0.8, 0.2, 0.6, 0.4);
+    gl_FragColor = texture2D(a_sampler, o_texcoord) * a_tint;
 }`;
 
 var gdr = {
@@ -492,6 +494,25 @@ var gdr = {
         69: {n: "times_360", t: "int"},
         // TODO: Add rest!!!
     },
+    getSongUrl: function(id, f) {
+        let r = new XMLHttpRequest();
+        if (!parseInt(id))
+            return false;
+        r.open("GET", "http://localhost:8567/getSongID/" + id);
+        r.onreadystatechange = () => {
+            if (r.readyState != 3)
+                return;
+            if (r.response == "-1") {
+                f(false);
+                return;
+            }
+            f("http://localhost:8567" + r.response)
+        }
+        r.onerr = () => {
+            f(false);
+        }
+        r.send();
+    },
     getOnlineLevel: function(id, f) {
         let r = new XMLHttpRequest();
         if (!parseInt(id))
@@ -514,25 +535,26 @@ var gdr = {
             if ((color == 1000 && obj.id == 29)
              || (color == 1001 && obj.id == 30)
              || (color == 1002 && obj.id == 104)
-             || (color == 1004 && obj.id == 105))
+             || (color == 1004 && obj.id == 105)
+             || (obj.id == 899 && obj.targcol == color))
                 listCOLs.push(obj);
         }
 
         var lastCOL = {x: 0, red: 255, blue: 255, green: 255, duration: 0};
         var curCol  = {r: 255, g: 255, b: 255};
         if (level.keys.colors[color] != undefined) {
-            lastCOL = {x: 0, red: level.keys.colors[color].r, blue: level.keys.colors[color].b, green: level.keys.colors[color].g, duration: 0};
-            curCol = {r: level.keys.colors[color].r, b: level.keys.colors[color].b, g: level.keys.colors[color].g};
+            lastCOL = {x: 0, red: level.keys.colors[color].red, blue: level.keys.colors[color].blue, green: level.keys.colors[color].green, duration: 0};
+            curCol = {r: level.keys.colors[color].red, b: level.keys.colors[color].blue, g: level.keys.colors[color].green};
         }
 
         for (const obj of listCOLs) {
             var delta = util.xToSec(level, obj.x) - util.xToSec(level, lastCOL.x);
+            obj.curCol = curCol;
             if (delta < lastCOL.duration) {
                 curCol = util.blendColor(curCol, {r: lastCOL.red, b: lastCOL.blue, g: lastCOL.green}, delta / lastCOL.duration);
             } else {
                 curCol = {r: lastCOL.red, b: lastCOL.blue, g: lastCOL.green};
             }
-            obj.curCol = curCol;
             lastCOL = obj;
         }
         return listCOLs;
@@ -558,9 +580,7 @@ var gdr = {
                 else {
                     var val = header.substring(lastCom, i);
                     ret = util.parseKey(currKey, val, keys);
-                    if (ret == null)
-                        console.log("Unknown Key: " + currKey);
-                    else
+                    if (ret != null)
                         keys = ret;
                     currKey = "";
                 }
@@ -609,6 +629,10 @@ var gdr = {
 
         var listCOLs = {};
         listCOLs[1000] = this.loadColors({keys: keys, objects: objs, listSPs: listSPs}, 1000);
+        listCOLs[1001] = this.loadColors({keys: keys, objects: objs, listSPs: listSPs}, 1001);
+        listCOLs[1002] = this.loadColors({keys: keys, objects: objs, listSPs: listSPs}, 1002);
+        listCOLs[1003] = this.loadColors({keys: keys, objects: objs, listSPs: listSPs}, 1003);
+        listCOLs[1004] = this.loadColors({keys: keys, objects: objs, listSPs: listSPs}, 1004);
 
         return {keys: keys, objects: objs, listSPs: listSPs, listCOLs: listCOLs};
     },
@@ -689,43 +713,55 @@ var gdr = {
         this.projM = glMatrix.mat3.create();
         glMatrix.mat3.scale(this.projM, this.projM, [2/gl.canvas.width, 2/gl.canvas.height]);
 
-        gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-
         this.loadImages(500);
     },
-    renderObject: function(obj) {
-        if (this.textures[obj.id] == undefined)
+    renderTexture: function(id, x, y, rot, flip, flop, tint) {
+        if (this.textures[id] == undefined)
             return;
-        if (!this.textures[obj.id].i.complete)
+        if (!this.textures[id].i.complete)
             return;
-        var rx = (obj.x - this.camera.x) * this.camera.zoom;
-        var ry = (obj.y + this.camera.y) * this.camera.zoom;
+        var rx = (x - this.camera.x) * this.camera.zoom;
+        var ry = (y + this.camera.y) * this.camera.zoom;
 
         var gl = this.gl;
 
-        if (!(rx+this.textures[obj.id].i.width/2+60 > -(gl.canvas.width/2) && rx-this.textures[obj.id].i.width/2-60 <= gl.canvas.width/2))
+        if (!(rx+this.textures[id].i.width/2+60 > -(gl.canvas.width/2) && rx-this.textures[id].i.width/2-60 <= gl.canvas.width/2))
             return;
-        if (!(ry+this.textures[obj.id].i.height/2+60 > -(gl.canvas.height/2) && ry-this.textures[obj.id].i.height/2-60 <= gl.canvas.height/2))
+        if (!(ry+this.textures[id].i.height/2+60 > -(gl.canvas.height/2) && ry-this.textures[id].i.height/2-60 <= gl.canvas.height/2))
             return;
 
-        var flip = (obj.flip_hor === undefined) ? false : obj.flip_hor;
-        var flop = (obj.flip_ver === undefined) ? false : obj.flip_ver;
-        var rot = (obj.rot === undefined) ? 0 : -obj.rot;
-
-        var sx = this.textures[obj.id].i.width/62*30 * (flip ? -1 : 1);
-        var sy = this.textures[obj.id].i.height/62*30 * (flop ? -1 : 1);
+        var sx = this.textures[id].i.width/62*30 * (flip ? -1 : 1);
+        var sy = this.textures[id].i.height/62*30 * (flop ? -1 : 1);
 
         var model = glMatrix.mat3.create();
-        glMatrix.mat3.translate(model, model, [obj.x, obj.y]);
+        glMatrix.mat3.translate(model, model, [x, y]);
         glMatrix.mat3.rotate(model, model, rot * Math.PI / 180);
         glMatrix.mat3.scale(model, model, [sx, sy]);
 
         gl.uniformMatrix3fv(this.mmUni, false, model);
+        var tinted = glMatrix.vec4.create();
+        tinted[0] = tint.r; tinted[1] = tint.g; tinted[2] = tint.b; tinted[3] = tint.a;
+        gl.uniform4fv(gl.getUniformLocation(this.gProg, "a_tint"), tinted);
 
-        util.enableTexture(gl, this.textures[obj.id].t, this.spUni);
-        //gl.polygonMode( gl.FRONT_AND_BACK, gl.LINE );
-
+        util.enableTexture(gl, this.textures[id].t, this.spUni);
+        
         gl.drawArrays(gl.TRIANGLES, 0, 6);
+    },
+    renderObject: function(level, obj) {
+        /*var channel = obj.maincolor ? obj.maincolor : 1004;
+        var color = null;
+        if (channel != undefined) {
+            color = util.xToCOL(level, gdr.camera.x, channel)
+            color.r /= 255;
+            color.g /= 255;
+            color.b /= 255;
+            color.a = 1;
+        }*/
+        this.renderTexture(obj.id, obj.x, obj.y, 
+            (obj.rot === undefined) ? 0 : -obj.rot,
+            (obj.flip_hor === undefined) ? false : obj.flip_hor,
+            (obj.flip_ver === undefined) ? false : obj.flip_ver,
+            {r: 1, g: 1, b: 1, a: 1})
     },
     renderLevel: function(level) {
         var gl = this.gl
@@ -733,13 +769,11 @@ var gdr = {
         var bgcol = util.xToCOL(level, this.camera.x, 1000);
 
         gl.clearColor(bgcol.r/255, bgcol.g/255, bgcol.b/255, 1);
-        //gl.clearColor(1, 1, 1, 0);
         gl.clear(gl.COLOR_BUFFER_BIT);
 
         gl.useProgram(this.gProg);
 
         this.viewM = glMatrix.mat3.create();
-        //glMatrix.mat3.translate(this.viewM, this.viewM, [-this.camera.x, this.camera.y]);
         glMatrix.mat3.scale(this.viewM, this.viewM, [this.camera.zoom, this.camera.zoom]);
 
         util.enableBuffer(gl, this.pBuff, this.pAttr, 2);
@@ -752,10 +786,7 @@ var gdr = {
         gl.uniform1f(this.cyUni, this.camera.y);
 
         for (var obj of level.objects) {
-            this.renderObject(obj);
+            this.renderObject(level, obj);
         }
-
-        //for (var i = 0; i < 300; i++)
-            //this.renderObject({id: i, x: 60*i, y: 0, flip_hor: false, flip_ver: false, rot: 0});
     }
 }
