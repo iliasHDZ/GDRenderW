@@ -111,22 +111,53 @@ function zoomout() {
     gdr.camera.zoom = Math.max(gdr.camera.zoom - 0.5, 0.5);
 }
 
+var playing = false;
+
+var loadedLevel = null;
+
 function playaudio() {
-    audio.play();
+    if (audio != null) {
+        if (!playing) {
+            audio.play();
+            document.getElementById("play-button").innerHTML = "STOP";
+            playing = true;
+        } else {
+            audio.pause();
+            audio.currentTime = levelParsed.keys.songoffset;
+            document.getElementById("play-button").innerHTML = "PLAY SONG";
+            playing = false;
+        }
+    }
 }
 
 var levelParsed = null;
 
 function switchLevel() {
     setInfo("Loading level...");
+    if (audio != null) {
+        audio.pause();
+        playing = false;
+        document.getElementById("play-button").innerHTML = "PLAY SONG";
+    }
+    audio = null;
     var ok = gdr.getOnlineLevel(document.getElementById("id-input").value, (e) => {
         if (!e)
             setInfo("Level not found or GD servers are down.");
 
+        loadedLevel = e;
         document.getElementById("level-name").innerHTML = e.name;
         document.getElementById("title").innerHTML = "GDRenderW - " + e.name;
         levelParsed = gdr.parseLevel(e.data);
-        audio = new Audio("https://newgrounds.com/audio/download/" + e.songID);
+        console.log(e.data);
+        gdr.getSongUrl(e.songID, (d) => {
+            if (!d) {
+                setInfo("Couldn't load the song. Sorry!");
+                return;
+            }
+            console.log(d);
+            audio = new Audio(d);
+            audio.currentTime = levelParsed.keys.songoffset;
+        })
         setInfo("");
         gdr.camera.x = 0;
         gdr.camera.y = 0;
@@ -134,16 +165,6 @@ function switchLevel() {
     });
     if (!ok)
         setInfo("Not a level id. (Remove spaces).");
-}
-
-window.onload = function() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const myParam = urlParams.get('level');
-
-    if (myParam) {
-        document.getElementById("id-input").value = myParam;
-        switchLevel();
-    }
 }
 
 var canvas = document.getElementById("canvas");
