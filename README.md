@@ -1,5 +1,5 @@
 # GDRenderW
-A Geometry Dash online level rendering engine
+A Geometry Dash online level rendering engine. The name stands for 'Geometry Dash renderer web'.
 
 Not everything is going to work exactly. But that is ok. Also alot of objects are missing, I've had to pick each object one by one. I currenly only did 200.
 This means that older level should work better.
