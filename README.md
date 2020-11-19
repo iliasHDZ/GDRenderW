@@ -8,4 +8,4 @@ I want to make it as good as it can. It will take a long time, but will make a g
 
 You can test it out [here](https://iliashdz.github.io/GDRenderW).
 
-EDIT: I am working on a newer version that will be uploaded soon. Also there will be all of 1.9's objects in a spreadsheet instead of in a folder.
+EDIT: I am working on a newer version that will be uploaded soon. Also there will be all of 1.9's objects in a spritesheet instead of in a folder.
