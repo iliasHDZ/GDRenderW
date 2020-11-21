@@ -1,249 +1,69 @@
-var audio = null;
-
-/*function renderstuff(level) {
-    var levelobj = gdr.parseLevel(level.data);
-
-    var canvas = document.getElementById("canvas");
-    var gl     = canvas.getContext("webgl");
-
-    var framecounter = document.getElementById("counter");
-
-    audio = new Audio("https://newgrounds.com/audio/download/" + level.songID);
-    console.log("https://newgrounds.com/audio/download/" + level.songID);
-
-    console.log(level.data);
-
-    gdr.init(gl);
-
-    toRight = false;
-    toLeft  = false;
-
-    mouseDown = false;
-
-    scroll = 0;
-    speed  = 5;
-
-    document.onkeydown = function(e) {
-        if (e.code == "KeyA")
-            toLeft = true;
-        if (e.code == "KeyD")
-            toRight = true;
-    }
-
-    document.onkeyup = function(e) {
-        if (e.code == "KeyA")
-            toLeft = false;
-        if (e.code == "KeyD")
-            toRight = false;
-    }
-
-    canvas.onmousedown = function(e) {
-        if(e.button == 0)
-            mouseDown = true;
-    }
-
-    document.onmouseup = function(e) {
-        if(e.button == 0)
-            mouseDown = false;
-    }
-
-    canvas.onmousemove = function(e) {
-        if(mouseDown) {
-            gdr.camera.x -= e.movementX / gdr.camera.zoom;
-            gdr.camera.y -= e.movementY / gdr.camera.zoom;
-        }
-    }
-
-    var frame = function(delta) {
-        if(toLeft)
-            gdr.camera.x -= speed * delta * 60;
-        if(toRight)
-            gdr.camera.x += speed * delta * 60;
-        gdr.renderLevel(levelobj);
-    }
-
-    var prev  = new Date().getTime();
-    var prog  = 0;
-
-    var frames = 0;
-
-    var timer = function() {
-        var now   = new Date().getTime();
-        var delta = now - prev;
-
-        prog += delta;
-
-        if (prog > 1000) {
-            counter.innerHTML = frames + " fps";
-            frames = 0;
-            prog -= 1000;
-        }
-
-        frame(delta);
-        frames++;
-
-        prev = now;
-        setTimeout(timer, 1);
-    }
-
-    setTimeout(timer, 1);
-
-    /*setInterval(() => {
-        if(toLeft)
-            gdr.camera.x -= speed;
-        if(toRight)
-            gdr.camera.x += speed;
-        gdr.renderLevel(levelobj);
-    }, 1000/60);
-}
-gdr.getOnlineLevel(10565740, renderstuff);*/
-
-
-function setInfo(info) {
-    document.getElementById("info").innerHTML = info;
-}
-
-function zoomin() {
-    gdr.camera.zoom += 0.5;
-}
-
-function zoomout() {
-    gdr.camera.zoom = Math.max(gdr.camera.zoom - 0.5, 0.5);
-}
-
-var playing = false;
-
-var loadedLevel = null;
-
-function playaudio() {
-    if (audio != null) {
-        if (!playing) {
-            audio.play();
-            document.getElementById("play-button").innerHTML = "STOP";
-            playing = true;
-        } else {
-            audio.pause();
-            audio.currentTime = levelParsed.keys.songoffset;
-            document.getElementById("play-button").innerHTML = "PLAY SONG";
-            playing = false;
-        }
-    }
-}
-
-var levelParsed = null;
-
-function switchLevel() {
-    setInfo("Loading level...");
-    if (audio != null) {
-        audio.pause();
-        playing = false;
-        document.getElementById("play-button").innerHTML = "PLAY SONG";
-    }
-    audio = null;
-    var ok = gdr.getOnlineLevel(document.getElementById("id-input").value, (e) => {
-        if (!e)
-            setInfo("Level not found or GD servers are down.");
-
-        loadedLevel = e;
-        document.getElementById("level-name").innerHTML = e.name;
-        document.getElementById("title").innerHTML = "GDRenderW - " + e.name;
-        levelParsed = gdr.parseLevel(e.data);
-        console.log(e.data);
-        gdr.getSongUrl(e.songID, (d) => {
-            if (!d) {
-                setInfo("Couldn't load the song. Sorry!");
-                return;
-            }
-            console.log(d);
-            audio = new Audio(d);
-            audio.currentTime = levelParsed.keys.songoffset;
-        })
-        setInfo("");
-        gdr.camera.x = 0;
-        gdr.camera.y = 0;
-        gdr.camera.zoom = 1;
-    });
-    if (!ok)
-        setInfo("Not a level id. (Remove spaces).");
-}
+import {GDRenderer, GDRParse} from "./GDRenderW/main.js"
 
 var canvas = document.getElementById("canvas");
 var gl     = canvas.getContext("webgl");
 
-var framecounter = document.getElementById("counter");
+var renderer = new GDRenderer(gl);
 
-gdr.init(gl);
+var loadedLevel;
 
-toRight = false;
-toLeft  = false;
+var dragging = false;
 
-mouseDown = false;
-
-scroll = 0;
-speed  = 5;
-
-document.onkeydown = function(e) {
-    if (e.code == "KeyA")
-        toLeft = true;
-    if (e.code == "KeyD")
-        toRight = true;
-}
-
-document.onkeyup = function(e) {
-    if (e.code == "KeyA")
-        toLeft = false;
-    if (e.code == "KeyD")
-        toRight = false;
+function setInfo(message) {
+    document.getElementById("info").innerHTML = message;
 }
 
 canvas.onmousedown = function(e) {
-    if(e.button == 0)
-        mouseDown = true;
+    if (e.button == 0)
+        dragging = true;
 }
 
-document.onmouseup = function(e) {
-    if(e.button == 0)
-        mouseDown = false;
-}
-
-canvas.onmousemove = function(e) {
-    if(mouseDown) {
-        gdr.camera.x -= e.movementX / gdr.camera.zoom;
-        gdr.camera.y -= e.movementY / gdr.camera.zoom;
+document.onmousemove = function(e) {
+    if (dragging) {
+        renderer.camera.x -= e.movementX / renderer.camera.zoom;
+        renderer.camera.y -= e.movementY / renderer.camera.zoom;
     }
 }
 
-var frame = function(delta) {
-    if(toLeft)
-        gdr.camera.x -= speed * delta * 60;
-    if(toRight)
-        gdr.camera.x += speed * delta * 60;
-    if (levelParsed)
-        gdr.renderLevel(levelParsed);
+document.onmouseup = function() {
+    dragging = false;
 }
 
-var prev  = new Date().getTime();
-var prog  = 0;
+document.getElementById("zoomin").onclick = function() {
+    renderer.camera.zoom += 0.5;
+}
 
+document.getElementById("zoomout").onclick = function() {
+    renderer.camera.zoom = Math.max(renderer.camera.zoom - 0.5, 0.5);
+}
+
+var prevSec = new Date().getTime();
 var frames = 0;
 
-var timer = function() {
-    var now   = new Date().getTime();
-    var delta = now - prev;
-
-    prog += delta;
-
-    if (prog > 1000) {
-        counter.innerHTML = frames + " fps";
-        frames = 0;
-        prog -= 1000;
-    }
-
-    frame(delta);
-    frames++;
-
-    prev = now;
-    setTimeout(timer, 1);
+document.getElementById("loader").onclick = function() {
+    setInfo("Loading level...");
+    GDRParse.getOnlineLevel(document.getElementById("id-input").value, function(level) {
+        if (level && level.data) {
+            setInfo("");
+            loadedLevel = GDRParse.parseLevel(level.data);
+            document.getElementById("level-name").innerHTML = level.name;
+            renderer.loadGDRLevel(loadedLevel);
+        } else
+            setInfo("Couldn't load the level. The GD server are not on or the GDBrowser API isn't working.");
+    });
 }
 
-setTimeout(timer, 1);
+function repeat() {
+    var now = new Date().getTime();
+    if (now - prevSec >= 1000) {
+        document.getElementById("counter").innerHTML = frames + " fps";
+        frames = 0;
+        prevSec += 1000;
+    }
+
+    frames++;
+    renderer.renderLevel();
+    setTimeout(repeat, 0);
+}
+
+repeat();
