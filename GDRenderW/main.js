@@ -850,7 +850,7 @@ export class GDRenderer {
 
         this.camera = new Camera(0, 0, 1);
 
-        this.mainT = new Texture(this.gl, "/GDRenderW/spritesheet.png");
+        this.mainT = new Texture(this.gl, "GDRenderW/spritesheet.png");
         
         this.loadTextures();
     };
